@@ -1,0 +1,1 @@
+Extends succesor represention idea in http://www.gatsby.ucl.ac.uk/~dayan/papers/sr93.pdf to use sucessor-action represention which allows us to compute the Q-value function.
