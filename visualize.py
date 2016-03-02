@@ -64,7 +64,7 @@ class VisualGame:
                                     [(MARGIN + WIDTH) * col + MARGIN,
                                      (MARGIN + HEIGHT) * row + MARGIN,
                                      WIDTH, HEIGHT])
-            # Limit to 60 frames per second
+            # Limit to 30 frames per second
             self.clock.tick(30)
             pygame.display.flip()
         pygame.quit()

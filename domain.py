@@ -40,16 +40,15 @@ class MovingGoalsWorld:
 
         # picks a random goal location among the possible goals
         world_vector = np.array(world_vector)
-        possible_goal_locs = np.where(world_vector == 2)[0]
+        possible_goal_locs = np.where(world_vector == GOAL)[0]
         np.random.shuffle(possible_goal_locs)
         # updates goal index
         self.goal_index = possible_goal_locs[0]
-        self.agent_index = np.where(world_vector == 3)[0][0]
+        self.agent_index = np.where(world_vector == AGENT)[0][0]
 
         for i,value in enumerate(world_vector):
             if value == 2 and i != self.goal_index:
-                world_vector[i] = 0
-        world_vector[self.goal_index] = GOAL
+                world_vector[i] = EMPTY
 
         return world_vector
         
@@ -81,9 +80,10 @@ class MovingGoalsWorld:
         # for right and left, update index different, but same checking condition
         if action == 'right':
             new_index = self.agent_index + 1
-
         if action == 'left':
             new_index = self.agent_index - 1
+
+        # checks that right or left move doesn't go past leftmost and rightmost wall
         if int(new_index/10) == int(self.agent_index/10) and self.state[new_index] != WALL:
             self.state[self.agent_index] = EMPTY
             self.state[new_index] = AGENT

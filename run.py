@@ -9,7 +9,7 @@ def train(num_episodes, domain, agent):
 
     # print updates 10 times
     chunk_size = num_episodes/10
-    print_mark = [chunk_size*i for i in range(10)]
+    print_mark = [chunk_size*i for i in range(11)]
     for episode in range(num_episodes):
         if episode in print_mark:
             print "Training " + str(episode) + "/" + str(num_episodes) + " complete."
@@ -48,8 +48,10 @@ def test(num_episodes, domain, agent, display):
             state = domain.get_state()
             dup_state = copy.copy(state)
             display.update_grid(dup_state)
+            time.sleep(0.5)
             action = agent.choose_action(state)
             is_terminal = domain.step(action)
+            new_state = domain.get_state()
             if not is_terminal:
                 # if the game has not ended, incur a cost of living reward
                 reward = -0.1
@@ -63,6 +65,7 @@ def test(num_episodes, domain, agent, display):
                     reward = -0.1
                 total_reward += reward
                 break
+            display.update_grid(new_state)
             time.sleep(0.5)
         print "Episode: " + str(episode) + ", Total Reward: " + str(total_reward)
         display.end_game()
