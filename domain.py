@@ -12,7 +12,7 @@ class MovingGoalsWorld:
     key: {'|' = wall, 'a' = agent (at initial location), 'g': allowable goal placement, 'x': empty}
     """
 
-    def __init__(self, world_config = 'world.txt', max_steps = 50):
+    def __init__(self, world_config = 'world.txt', max_steps = 100):
 
         self.goal_index = None
         self.agent_index = None

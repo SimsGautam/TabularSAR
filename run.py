@@ -1,5 +1,6 @@
 from domain import *
 from old_agent import *
+from SASR_agent import *
 import copy
 import visualize
 import threading
@@ -12,6 +13,7 @@ def train(num_episodes, domain, agent):
     print_mark = [chunk_size*i for i in range(11)]
     for episode in range(num_episodes):
         if episode in print_mark:
+            print agent.explored_SA_count, episode
             print "Training " + str(episode) + "/" + str(num_episodes) + " complete."
         total_reward = 0
         domain.reinitialize()
@@ -24,7 +26,7 @@ def train(num_episodes, domain, agent):
             if not is_terminal:
                 # if the game has not ended, incur a cost of living reward
                 reward = -0.1
-                agent.Q_learn(dup_state, action, reward, new_state)
+                agent.SR_learn(dup_state, action, reward, new_state)
                 total_reward += reward
             else:
                 if domain.reached_goal():
@@ -35,7 +37,7 @@ def train(num_episodes, domain, agent):
                     reward = -0.1
                 total_reward += reward
                 new_state = domain.state
-                agent.Q_learn(dup_state, action, reward, new_state)
+                agent.SR_learn(dup_state, action, reward, new_state)
                 break
 
 
@@ -74,14 +76,20 @@ def test(num_episodes, domain, agent, display):
 
 if __name__ == '__main__':
     domain = MovingGoalsWorld()
-    agent = OldAgent(domain.possible_actions)
-    episodes_train = 15000
+    # agent = OldAgent(domain.possible_actions)
+    agent = SASRagent(domain.possible_actions)
+    episodes_train = 500
     episodes_test = 1
 
     train(episodes_train, domain, agent)
 
     # set the exploration rate to 0 before testing
-    agent.set_epilson(0)
+    agent.set_epilson(0.2)
+
+    train(episodes_train, domain, agent)
+
+    agent.set_epilson(0.0)
+
 
     while True:
         inp = raw_input('Enter test or quit: ')

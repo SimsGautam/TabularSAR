@@ -2,7 +2,7 @@ import random
 import numpy as np
 
 class OldAgent:
-    def __init__(self, possible_actions, gamma = 0.9, epsilon = 0.1, alpha = 0.2, default_Q = 0.0):
+    def __init__(self, possible_actions, gamma = 0.9, epsilon = 1, alpha = 0.2, default_Q = 0.0):
         """
         gamma: discount rate
         epsilon: exploration rate
@@ -16,6 +16,9 @@ class OldAgent:
         self.alpha = alpha
         self.default_Q = default_Q
         self.actions = possible_actions
+
+    def get_size(self):
+        return len(self.q_table)
 
     def set_epilson(self, new_epsilon):
         self.epsilon = new_epsilon
