@@ -9,4 +9,4 @@ Requirements:
 * numpy
 
 TODO:
-* create new_agent.py that estimates state-action successor representation to calculate Q values.
+* debug SASR_agent.py that builds a state-action successor representation table to calculate Q values.
