@@ -9,4 +9,8 @@ Requirements:
 * numpy
 
 TODO:
-* debug SASR_agent.py that builds a state-action successor representation table to calculate Q values.
+* Create a predicted future occupancy heat map to visualize
+* clean up run.py
+* Implement linear function approximation for SASR
+
+The linear function approximation would be useful because we could set up an experiment where we train the agent on a particular goal, then change the goal and measure the convergence rate of the approximate SASR of the new goal.

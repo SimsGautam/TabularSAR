@@ -12,7 +12,7 @@ class MovingGoalsWorld:
     key: {'|' = wall, 'a' = agent (at initial location), 'g': allowable goal placement, 'x': empty}
     """
 
-    def __init__(self, world_config = 'world.txt', max_steps = 100):
+    def __init__(self, world_config = 'world.txt', max_steps = 50):
 
         self.goal_index = None
         self.agent_index = None
@@ -20,16 +20,16 @@ class MovingGoalsWorld:
         self.max_steps = max_steps
         self.world_config = world_config
         self.possible_actions = ['up', 'down', 'right', 'left', 'stay']
-        self.state = self.s0()
+        self.state = self.s0(23)
 
 
     def get_state(self):
         return self.state
 
-    def reinitialize(self):
-        self.state = self.s0()
+    def reinitialize(self, goal_index):
+        self.state = self.s0(goal_index)
 
-    def s0(self):
+    def s0(self, goal_index):
         self.num_steps = 0
         # parses the world_config file into a bag-of-words state vector
         key = {'x': EMPTY, '|': WALL, 'g': GOAL, 'a': AGENT}
@@ -43,12 +43,16 @@ class MovingGoalsWorld:
         possible_goal_locs = np.where(world_vector == GOAL)[0]
         np.random.shuffle(possible_goal_locs)
         # updates goal index
-        self.goal_index = possible_goal_locs[0]
+        # self.goal_index = possible_goal_locs[0]
+        self.goal_index = goal_index
+
         self.agent_index = np.where(world_vector == AGENT)[0][0]
 
         for i,value in enumerate(world_vector):
-            if value == 2 and i != self.goal_index:
+            if value == GOAL and i != self.goal_index:
                 world_vector[i] = EMPTY
+
+        world_vector[self.goal_index] = GOAL
 
         return world_vector
         
