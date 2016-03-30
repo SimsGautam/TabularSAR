@@ -13,16 +13,16 @@ def train(num_episodes, domain, agent, goal_index):
     print_mark = [chunk_size*i for i in range(11)]
     for episode in range(num_episodes):
         if episode in print_mark:
-            print agent.explored_SA_count, episode
+            print 'explored states: ' + str(agent.explored_SA_count)
             print "Training " + str(episode) + "/" + str(num_episodes) + " complete."
         total_reward = 0
         domain.reinitialize(goal_index)
         while True:
-            state = domain.get_state()
+            state = domain.get_agent_state()
             dup_state = copy.copy(state)
             action = agent.choose_action(state)
             is_terminal = domain.step(action)
-            new_state = domain.get_state()
+            new_state = domain.get_agent_state()
             if not is_terminal:
                 # if the game has not ended, incur a cost of living reward
                 reward = -0.1
@@ -36,7 +36,7 @@ def train(num_episodes, domain, agent, goal_index):
                     # if max_steps is reached and agent not at goal
                     reward = -0.1
                 total_reward += reward
-                new_state = domain.state
+                new_state = domain.get_agent_state()
                 agent.SR_learn(dup_state, action, reward, new_state)
                 break
 
@@ -47,15 +47,18 @@ def test(num_episodes, domain, agent, display, goal_index):
         total_reward = 0
         domain.reinitialize(goal_index)
         while True:
-            state = domain.get_state()
+            full_state = domain.get_full_state()
+            full_dup_state = copy.copy(full_state)
+            display.update_grid(full_dup_state)
+
+            state = domain.get_agent_state()
             dup_state = copy.copy(state)
-            display.update_grid(dup_state)
+
             time.sleep(0.5)
             action = agent.choose_action(state)
             state_tup = tuple(state)
-            print agent.m_table[(state_tup, action)]
             is_terminal = domain.step(action)
-            new_state = domain.get_state()
+            new_state = domain.get_full_state()
             for action in domain.possible_actions:
                 print action
                 print agent.get_Q(state, action)
@@ -81,23 +84,23 @@ def test(num_episodes, domain, agent, display, goal_index):
 
 
 if __name__ == '__main__':
-    domain = MovingGoalsWorld()
+    goal_index = 31
+    domain = MovingGoalsWorld(goal_index = goal_index)
     # agent = OldAgent(domain.possible_actions)
-    agent = SASRagent(domain.possible_actions)
-    episodes_train = 500
+    agent = SASRagent(domain.possible_actions, goal_index = goal_index)
+    episodes_train = 150
     episodes_test = 1
-    goal_index = 23
 
-    train(100, domain, agent, goal_index)
+    print '> STARTED LATENT LEARNING...'
+    # training on default epsilon = 1 (pure exploration)
+    train(50, domain, agent, goal_index)
 
-    # set the exploration rate to 0 before testing
+    # seting the exploration rate to 0 (pure exploitation)
     agent.set_epilson(0.0)
+
+    print '> STARTED TRAINING...'
 
     train(episodes_train, domain, agent, goal_index)
-
-    agent.set_epilson(0.0)
-    print agent.epsilon
-
 
     while True:
         inp = raw_input('Enter test or quit: ')
@@ -105,9 +108,9 @@ if __name__ == '__main__':
         if inp == 'quit':
             break
         elif inp == 'test':
-            display = visualize.VisualGame(domain.get_state())
+            display = visualize.VisualGame(domain.get_full_state())
             domain.reinitialize(goal_index)
-            state = domain.get_state()
+            # state = domain.get_state()
 
             test_thread = threading.Thread(target = test, args = (episodes_test, domain, agent, display, goal_index))
             display_thread = threading.Thread(target = display.run)
@@ -118,7 +121,6 @@ if __name__ == '__main__':
 
             test_thread.start()
             display_thread.start()
-
         else:
             continue
 

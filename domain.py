@@ -12,7 +12,7 @@ class MovingGoalsWorld:
     key: {'|' = wall, 'a' = agent (at initial location), 'g': allowable goal placement, 'x': empty}
     """
 
-    def __init__(self, world_config = 'world.txt', max_steps = 50):
+    def __init__(self, goal_index, world_config = 'world.txt', max_steps = 70):
 
         self.goal_index = None
         self.agent_index = None
@@ -20,11 +20,15 @@ class MovingGoalsWorld:
         self.max_steps = max_steps
         self.world_config = world_config
         self.possible_actions = ['up', 'down', 'right', 'left', 'stay']
-        self.state = self.s0(23)
+        self.state = self.s0(goal_index)
 
 
-    def get_state(self):
+    def get_full_state(self):
         return self.state
+
+    def get_agent_state(self):
+        # returns location of agent
+        return np.where(self.state == AGENT)[0]
 
     def reinitialize(self, goal_index):
         self.state = self.s0(goal_index)

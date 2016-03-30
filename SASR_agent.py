@@ -3,7 +3,7 @@ import numpy as np
 from collections import OrderedDict
 
 class SASRagent:
-    def __init__(self, possible_actions, gamma = 0.7, epsilon = 1.0, alpha = 0.2, default_Q = 0.0):
+    def __init__(self, possible_actions, goal_index, gamma = 0.7, epsilon = 1.0, alpha = 0.3, default_Q = 0.0):
         """
         gamma: discount rate
         epsilon: exploration rate
@@ -20,11 +20,12 @@ class SASRagent:
         self.alpha = alpha
         self.default_Q = default_Q
         self.actions = possible_actions
+        self.goal_index = goal_index
 
     def reward(self, state):
         # 2 = GOAL
         # if the goal is still in the state, return cost of living
-        if 2 in state:
+        if state[0] != self.goal_index:
             return -0.1
         # else return reward of reaching the goal
         return 0
