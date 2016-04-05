@@ -3,21 +3,30 @@ from old_agent import *
 from SASR_agent import *
 import copy
 import visualize
-import threading
+import multiprocessing
 import time
+import matplotlib
+from operator import add
+from operator import div
+matplotlib.use('TkAgg')
+import matplotlib.pyplot as plt
 
-def train(num_episodes, domain, agent, goal_index):
-
-    # print updates 10 times
-    chunk_size = num_episodes/10
-    print_mark = [chunk_size*i for i in range(11)]
-    for episode in range(num_episodes):
-        if episode in print_mark:
+def train(max_episodes, domain, agent, goal_index):
+    chunk_size = 10
+    rewards = []
+    episode = 0
+    while True:
+        if episode % 10 == 0:
             print 'explored states: ' + str(agent.explored_SA_count)
-            print "Training " + str(episode) + "/" + str(num_episodes) + " complete."
+            print "Training: " + str(episode) + " episodes complete."
+            # print rewards[-chunk_size:]
+            # if (len(set(rewards[-chunk_size:])) == 1 and rewards[-chunk_size:][0] > -3) or episode >= max_episodes:
+            if episode > max_episodes:
+                break
         total_reward = 0
         domain.reinitialize(goal_index)
-        while True:
+        agent_alive = True
+        while agent_alive:
             state = domain.get_agent_state()
             dup_state = copy.copy(state)
             action = agent.choose_action(state)
@@ -38,7 +47,10 @@ def train(num_episodes, domain, agent, goal_index):
                 total_reward += reward
                 new_state = domain.get_agent_state()
                 agent.SR_learn(dup_state, action, reward, new_state)
-                break
+                agent_alive = False
+        rewards.append(total_reward)
+        episode += 1
+    return rewards
 
 
 def test(num_episodes, domain, agent, display, goal_index):
@@ -82,47 +94,103 @@ def test(num_episodes, domain, agent, display, goal_index):
         display.end_game()
     return True
 
+def parse_config(config_file):
+    cfg = {}
+    for line in config_file:
+        key,value = line.strip().split(' = ')
+        if key == 'initial_goal' or key == 'second_goal':
+            x,y = int(value[1]), int(value[3])
+            value = (x-1)*10-1+y
+        cfg[key] = int(value)
+    return cfg
 
-if __name__ == '__main__':
-    goal_index = 31
-    domain = MovingGoalsWorld(goal_index = goal_index)
-    # agent = OldAgent(domain.possible_actions)
-    agent = SASRagent(domain.possible_actions, goal_index = goal_index)
-    episodes_train = 150
-    episodes_test = 1
+def SASR_agent_run(run_number):
 
-    print '> STARTED LATENT LEARNING...'
+    goal_index = cfg['initial_goal']
+    domain = MovingGoalsWorld(goal_index)
+    agent = SASRagent(domain.possible_actions, goal_index)
+
+    print '> STARTING LATENT LEARNING...'
     # training on default epsilon = 1 (pure exploration)
-    train(50, domain, agent, goal_index)
+    train(cfg['max_explore_episodes'], domain, agent, goal_index)
 
     # seting the exploration rate to 0 (pure exploitation)
     agent.set_epilson(0.0)
 
-    print '> STARTED TRAINING...'
+    print '> STARTING TRAINING...'
+    rewards = train(cfg['max_exploit_episodes'], domain, agent, goal_index)
 
-    train(episodes_train, domain, agent, goal_index)
+    goal_index = cfg['second_goal']
+    domain.set_goal(goal_index)
+    agent.set_goal(goal_index)
 
-    while True:
-        inp = raw_input('Enter test or quit: ')
+    print '> STARTING SECOND GOAL TRAINING...'
+    new_rewards = train(cfg['max_exploit_episodes2'], domain, agent, goal_index)
 
-        if inp == 'quit':
-            break
-        elif inp == 'test':
-            display = visualize.VisualGame(domain.get_full_state())
-            domain.reinitialize(goal_index)
-            # state = domain.get_state()
-
-            test_thread = threading.Thread(target = test, args = (episodes_test, domain, agent, display, goal_index))
-            display_thread = threading.Thread(target = display.run)
-
-            # so that we can exit from shell while thread is running
-            test_thread.daemon = True
-            display_thread.daemon = True
-
-            test_thread.start()
-            display_thread.start()
-        else:
-            continue
+    return rewards, new_rewards
 
 
+def plot_and_save(y, title):
+    x = [i for i in range(len(y))]
+    plt.plot(x, y)
+    plt.savefig(title)
+    plt.close()
+
+
+if __name__ == '__main__':
+
+    f = open('run.config', 'r')
+    cfg = parse_config(f)
+
+    total_runs = 6
+
+    # train SASR agents in multiple processes
+    pool = multiprocessing.Pool(total_runs)
+    out = pool.map(SASR_agent_run, range(total_runs))
+
+    # save plots for individual plots
+    for run in range(total_runs):
+        first_rewards, second_rewards = out[run]
+
+        plot_and_save(first_rewards, 'first_goal_' + str(run+1))
+        plot_and_save(second_rewards, 'second_goal_' + str(run+1))
+
+    # compute averages across runs
+    average_first_rewards = [0 for i in range(len(out[0][0]))]
+    average_second_rewards = [0 for i in range(len(out[0][1]))]
+
+    for run in range(total_runs):
+        first_rewards, second_rewards = out[run] 
+        average_first_rewards = map(add, average_first_rewards, first_rewards)
+        average_second_rewards = map(add, average_second_rewards, second_rewards)
+
+    average_first_rewards = map(div, average_first_rewards, [float(total_runs) for i in range(len(average_first_rewards))])
+    average_second_rewards = map(div, average_second_rewards, [float(total_runs) for i in range(len(average_first_rewards))])
+
+    # plot average rewards over time
+    plot_and_save(average_first_rewards, 'average_first_goal')
+    plot_and_save(average_second_rewards, 'average_second_goal')
+
+
+    # while True:
+    #     inp = raw_input('Enter test or quit: ')
+
+    #     if inp == 'quit':
+    #         break
+    #     elif inp == 'test':
+    #         display = visualize.VisualGame(domain.get_full_state())
+    #         domain.reinitialize(goal_index)
+    #         # state = domain.get_state()
+
+    #         test_thread = threading.Thread(target = test, args = (1, domain, agent, display, goal_index))
+    #         display_thread = threading.Thread(target = display.run)
+
+    #         # so that we can exit from shell while thread is running
+    #         test_thread.daemon = True
+    #         display_thread.daemon = True
+
+    #         test_thread.start()
+    #         display_thread.start()
+    #     else:
+    #         continue
     

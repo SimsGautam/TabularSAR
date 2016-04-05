@@ -22,6 +22,9 @@ class SASRagent:
         self.actions = possible_actions
         self.goal_index = goal_index
 
+    def set_goal(self, goal_index):
+        self.goal_index = goal_index
+
     def reward(self, state):
         # 2 = GOAL
         # if the goal is still in the state, return cost of living
@@ -92,5 +95,8 @@ class SASRagent:
         for j, M_j in enumerate(self.m_table[(state_tup,action)][0]):
             jth_state_tuple = self.m_table.keys()[j][0]
             self.m_table[(state_tup,action)][0][j] += self.alpha * (int(state_tup == jth_state_tuple) + self.gamma * SR_new_state[j] - M_j)
+
+        # update reward
+        self.m_table[(state_tup,action)][1] = self.reward(state)
 
 

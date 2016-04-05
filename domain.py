@@ -20,8 +20,11 @@ class MovingGoalsWorld:
         self.max_steps = max_steps
         self.world_config = world_config
         self.possible_actions = ['up', 'down', 'right', 'left', 'stay']
-        self.state = self.s0(goal_index)
+        self.goal_index = goal_index
+        self.state = self.s0(self.goal_index)
 
+    def set_goal(self, goal_index):
+        self.goal_index = goal_index
 
     def get_full_state(self):
         return self.state
