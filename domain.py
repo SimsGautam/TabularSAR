@@ -6,7 +6,7 @@ WALL = 1
 GOAL = 2
 AGENT = 3
 
-class MovingGoalsWorld:
+class ToyWorld:
     """
     10x10 world specified in world.txt
     key: {'|' = wall, 'a' = agent (at initial location), 'g': allowable goal placement, 'x': empty}
@@ -31,12 +31,13 @@ class MovingGoalsWorld:
 
     def get_agent_state(self):
         # returns location of agent
-        return np.where(self.state == AGENT)[0]
+        return int(np.where(self.state == AGENT)[0])
 
     def reinitialize(self, goal_index):
         self.state = self.s0(goal_index)
 
     def s0(self, goal_index):
+        
         self.num_steps = 0
         # parses the world_config file into a bag-of-words state vector
         key = {'x': EMPTY, '|': WALL, 'g': GOAL, 'a': AGENT}
@@ -45,14 +46,9 @@ class MovingGoalsWorld:
             for i,line in enumerate(world_file):
                 world_vector += [key[i] for i in line.strip().split(' ')]
 
-        # picks a random goal location among the possible goals
         world_vector = np.array(world_vector)
-        possible_goal_locs = np.where(world_vector == GOAL)[0]
-        np.random.shuffle(possible_goal_locs)
-        # updates goal index
-        # self.goal_index = possible_goal_locs[0]
+ 
         self.goal_index = goal_index
-
         self.agent_index = np.where(world_vector == AGENT)[0][0]
 
         for i,value in enumerate(world_vector):
@@ -64,7 +60,7 @@ class MovingGoalsWorld:
         return world_vector
         
     def step(self, action):
-        # returns next state given the action
+        # updates state given the current state and action
 
         self.num_steps += 1
 
@@ -99,6 +95,7 @@ class MovingGoalsWorld:
             self.state[self.agent_index] = EMPTY
             self.state[new_index] = AGENT
             self.agent_index = new_index
+
         return self.is_terminal()
 
 

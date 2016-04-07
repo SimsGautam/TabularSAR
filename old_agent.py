@@ -2,7 +2,7 @@ import random
 import numpy as np
 
 class OldAgent:
-    def __init__(self, possible_actions, gamma = 0.9, epsilon = 1, alpha = 0.2, default_Q = 0.0):
+    def __init__(self, possible_actions, gamma = 1, epsilon = 1, alpha = 0.9, default_Q = 0.0):
         """
         gamma: discount rate
         epsilon: exploration rate
@@ -24,17 +24,15 @@ class OldAgent:
         self.epsilon = new_epsilon
 
     def get_Q(self, state, action):
-        state_tup = tuple(state)
-        return self.q_table.get((state_tup,action), self.default_Q)
+        return self.q_table.get((state,action), self.default_Q)
 
     def update_Q(self, new_estimate, state, action):
         # should update the Q-value in the table based on learning rate
-        state_tup = tuple(state)
-        old_Q = self.q_table.get((state_tup, action), None)
+        old_Q = self.q_table.get((state, action), None)
         if old_Q == None:
-            self.q_table[(state_tup, action)] = self.alpha*new_estimate
+            self.q_table[(state, action)] = self.alpha*new_estimate
         else:
-            self.q_table[(state_tup, action)] = old_Q + self.alpha*(new_estimate - old_Q)
+            self.q_table[(state, action)] = old_Q + self.alpha*(new_estimate - old_Q)
 
     def choose_action(self, state):
         # epsilon greedy approach: choose randomly with probability epsilon
@@ -47,7 +45,7 @@ class OldAgent:
             action = self.actions[random.choice(max_indices)]
         return action
 
-    def Q_learn(self, state, action, reward, new_state):
+    def learn(self, state, action, reward, new_state):
         new_max_Q = max([self.get_Q(new_state,a) for a in self.actions])
         new_estimate = reward + self.gamma * new_max_Q
         self.update_Q(new_estimate, state, action)

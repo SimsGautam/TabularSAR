@@ -3,7 +3,7 @@ import numpy as np
 from collections import OrderedDict
 
 class SASRagent:
-    def __init__(self, possible_actions, goal_index, gamma = 0.7, epsilon = 1.0, alpha = 0.3, default_Q = 0.0):
+    def __init__(self, possible_actions, goal_index, gamma = 1, epsilon = 1.0, alpha = 0.9, default_Q = 0.0):
         """
         gamma: discount rate
         epsilon: exploration rate
@@ -28,15 +28,14 @@ class SASRagent:
     def reward(self, state):
         # 2 = GOAL
         # if the goal is still in the state, return cost of living
-        if state[0] != self.goal_index:
+        if state != self.goal_index:
             return -0.1
         # else return reward of reaching the goal
         return 0
 
     def new_SA_update(self, state, action):
         # updates that need to be made when agent encounters new (state,action)
-        state_tup = tuple(state)
-        self.m_table[(state_tup, action)] = [self.get_default_SR(), self.reward(state)]
+        self.m_table[(state, action)] = [self.get_default_SR(), self.reward(state)]
         for SR,_ in self.m_table.values():
             SR.append(0)
         self.explored_SA_count += 1
@@ -52,9 +51,8 @@ class SASRagent:
         return np.array([elem[1] for elem in self.m_table.values()])
 
     def get_Q(self, state, action):
-        state_tup = tuple(state)
-        if (state_tup,action) in self.m_table:
-            return np.dot(np.array(self.m_table[(state_tup,action)][0]), self.get_R_table())
+        if (state,action) in self.m_table:
+            return np.dot(np.array(self.m_table[(state,action)][0]), self.get_R_table())
         else:
             return self.default_Q
 
@@ -66,6 +64,7 @@ class SASRagent:
             action = self.choose_optimal_action(state)
         return action
 
+    # TODO: optimize this
     def choose_optimal_action(self, state):
         q_values = [self.get_Q(state, action) for action in self.actions]
         max_value = max(q_values)
@@ -73,30 +72,33 @@ class SASRagent:
         action = self.actions[random.choice(max_indices)]
         return action
 
-    def SR_learn(self, state, action, reward, new_state):
 
-        state_tup = tuple(state)
-        new_state_tup = tuple(new_state)
+    # TODO: optimize this with numpy(?)
+    def learn(self, state, action, reward, new_state):
 
         # if we haven't already explored this state
         # then initialize it as a new state
-        if (state_tup, action) not in self.m_table:
+        if (state, action) not in self.m_table:
             self.new_SA_update(state, action)
         
-        i = self.m_table.keys().index((state_tup,action))
+        # i = self.m_table.keys().index((state,action))
         new_action = self.choose_optimal_action(new_state)
 
         try:
-            SR_new_state = self.m_table[(new_state_tup,new_action)][0]
+            SR_new_state = self.m_table[(new_state,new_action)][0]
         except:
             self.new_SA_update(new_state, new_action)
-            SR_new_state = self.m_table[(new_state_tup,new_action)][0]
+            SR_new_state = self.m_table[(new_state,new_action)][0]
             # M_j is M(s_t, a_t)_j
-        for j, M_j in enumerate(self.m_table[(state_tup,action)][0]):
+
+        SR_state = self.m_table[(state,action)][0]
+        for j, M_j in enumerate(SR_state):
             jth_state_tuple = self.m_table.keys()[j][0]
-            self.m_table[(state_tup,action)][0][j] += self.alpha * (int(state_tup == jth_state_tuple) + self.gamma * SR_new_state[j] - M_j)
+            SR_state[j] += self.alpha * (int(state == jth_state_tuple) + self.gamma * SR_new_state[j] - M_j)
+
+        self.m_table[(state,action)][0] = SR_state
 
         # update reward
-        self.m_table[(state_tup,action)][1] = self.reward(state)
+        self.m_table[(state,action)][1] = self.reward(state)
 
 
